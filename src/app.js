@@ -5,33 +5,36 @@ const PORT = 3000;
 
 const app = express();
 
-// we can also use the middleware for specific routes, for example, for the user route
+// one way of handling error is to throw an error in the route handler and catch it in the error handling middleware
+app.get("/admin", adminAuthenticate, (req, res) => {
+  throw new Error("Admin route error");
+
+  res.send("Admin route accessed successfully.");
+});
+
+app.use("/", (err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send("Something went wrong!");
+});
+
+// other way is to handle error insie try catch block in the route handler
 app.get("/user", userAuthenticate, (req, res) => {
-  console.log("User route accessed");
-  // Logic to handle user request
-  res.send("User route accessed successfully");
+  try {
+    throw new Error("User route error");
+    res.send("User route accessed successfully.");
+  } catch (error) {
+    console.error(error.stack);
+    res.status(500).send("Something went wrong! in users");
+  }
 });
 
-// this is the middleware for all the routes (GET, POST, PUT, DELETE) to handle the request and response for admin
-app.use("/admin", adminAuthenticate);
-
-app.get("/admin/getAllUser", (req, res) => {
-  console.log("Get all users route accessed");
-  // Logic to get all users
-  res.send("All users retrieved successfully");
-});
-
-app.get("/admin/updateUser", (req, res) => {
-  console.log("Update user route accessed");
-  // Logic to update a user
-  res.send("User updated successfully");
-});
-
-app.get("/admin/deleteUser", (req, res) => {
-  console.log("Delete user route accessed");
-  // Logic to delete a user
-  res.send("User deleted successfully");
-});
+// the best way is to use try and catch block and handle the error in current route handler itsef
+// but as a fallback we can use error handling middleware to catch any unhandled errors and send a generic error response to the client. This way, we can ensure that our application doesn't crash and provides a consistent error response to the client.
+// like below commented code, we can use error handling middleware to catch any unhandled errors and send a generic error response to the client. This way, we can ensure that our application doesn't crash and provides a consistent error response to the client.
+// app.use("/", (err, req, res, next) => {
+//   console.error(err.stack);
+//   res.status(500).send("Something went wrong!");
+// });
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
