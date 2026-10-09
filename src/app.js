@@ -1,19 +1,19 @@
 const express = require("express");
+const { adminAuthenticate, userAuthenticate } = require("./middlewares/auth");
 
 const PORT = 3000;
 
 const app = express();
 
-// this is the middleware for all the routes (GET, POST, PUT, DELETE) to handle the request and response for admin
-app.use("/admin", (req, res, next) => {
-  // Middleware logic for admin routes
-  const token = "TOKEN";
-  const isAdminAuthenticated = token === "TOKN"; // Replace with your actual authentication logic
-  if (!isAdminAuthenticated) {
-    return res.status(403).send("Access denied. Admin authentication failed.");
-  }
-  next();
+// we can also use the middleware for specific routes, for example, for the user route
+app.get("/user", userAuthenticate, (req, res) => {
+  console.log("User route accessed");
+  // Logic to handle user request
+  res.send("User route accessed successfully");
 });
+
+// this is the middleware for all the routes (GET, POST, PUT, DELETE) to handle the request and response for admin
+app.use("/admin", adminAuthenticate);
 
 app.get("/admin/getAllUser", (req, res) => {
   console.log("Get all users route accessed");
