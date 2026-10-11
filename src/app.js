@@ -79,6 +79,48 @@ app.get("/user/:id", async (req, res) => {
   }
 });
 
+/** delete user */
+
+app.delete("/user/:id", async (req, res) => {
+  const userId = req.params.id;
+  try {
+    // const deletedUser = await User.findByIdAndDelete(userId);
+    const deletedUser = await User.findByIdAndDelete({ _id: userId });
+    if (!deletedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+/** patch user */
+
+app.patch("/user/:id", async (req, res) => {
+  const userId = req.params.id;
+  const updateData = req.body;
+
+  try {
+    // const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+    const updatedUser = await User.findByIdAndUpdate(
+      { _id: userId },
+      updateData,
+      {
+        returnDocument: "after",
+        // includeResultMetadata: true,
+        translateAliases: true,
+      },
+    );
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json(updatedUser);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 /** FEED */
 app.get("/feed", async (req, res) => {
   /** get all users */
