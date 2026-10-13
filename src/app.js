@@ -1,5 +1,4 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const { connectToDatabase } = require("./config/database.js");
 const { User } = require("./models/user.js");
 const PORT = 3000;
@@ -22,14 +21,12 @@ app.post("/signup", async (req, res) => {
     gender: req.body.gender,
   });
 
-  await newUser
-    .save()
-    .then((user) => {
-      res.status(201).json(user);
-    })
-    .catch((err) => {
-      res.status(400).json({ error: err.message });
-    });
+  try {
+    await newUser.save();
+    res.status(201).json(newUser);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 /** USER */
@@ -108,8 +105,29 @@ app.patch("/user/:id", async (req, res) => {
       updateData,
       {
         returnDocument: "after",
-        // includeResultMetadata: true,
-        translateAliases: true,
+        runValidators: true,
+      },
+    );
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json(updatedUser);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+/** Update user by email */
+app.patch("/user/email/:email", async (req, res) => {
+  const userEmail = req.params.email;
+  const updateData = req.body;
+
+  try {
+    const updatedUser = await User.findOneAndUpdate(
+      { email: userEmail }, // condition to find the user by email
+      updateData,
+      {
+        returnDocument: "after",
       },
     );
     if (!updatedUser) {
