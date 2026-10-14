@@ -11,23 +11,51 @@ app.use(express.json());
 /** APIs */
 
 /** AUTH */
-app.post("/signup", async (req, res) => {
-  const newUser = new User({
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
-    email: req.body.email,
-    password: req.body.password,
-    age: req.body.age,
-    gender: req.body.gender,
-  });
+app.post(
+  "/signup",
+  (req, res, next) => {
+    const data = req.body;
 
-  try {
-    await newUser.save();
-    res.status(201).json(newUser);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+    // ADD API LEVEL DATA SANITIZATION AND VALIDADTION
+    /**
+     * when reqest comes from api, it has to be sanitized so that only the
+     * data i.e. required will go to DB
+     */
+    const Allowed_Data = [
+      "firstName",
+      "lastName",
+      "gender",
+      "age",
+      "email",
+      "password",
+    ];
+
+    const validData = Object.keys(data).every((k) => Allowed_Data.includes(k));
+    if (!validData) {
+      res.status(400).json({
+        message: "Data is not valid!",
+      });
+    } else {
+      next();
+    }
+  },
+  async (req, res) => {
+    const newUser = new User({
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      email: req.body.email,
+      password: req.body.password,
+      age: req.body.age,
+      gender: req.body.gender,
+    });
+    try {
+      await newUser.save();
+      res.status(201).json(newUser);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  },
+);
 
 /** USER */
 
