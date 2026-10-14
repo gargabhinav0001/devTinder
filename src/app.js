@@ -1,6 +1,9 @@
 const express = require("express");
 const { connectToDatabase } = require("./config/database.js");
 const { User } = require("./models/user.js");
+const { validateSignupData } = require("./utils/validation.js");
+const bcrypt = require("bcrypt");
+
 const PORT = 3000;
 
 const app = express();
@@ -13,42 +16,53 @@ app.use(express.json());
 /** AUTH */
 app.post(
   "/signup",
-  (req, res, next) => {
-    const data = req.body;
+  // (req, res, next) => {
+  //   const data = req.body;
 
-    // ADD API LEVEL DATA SANITIZATION AND VALIDADTION
-    /**
-     * when reqest comes from api, it has to be sanitized so that only the
-     * data i.e. required will go to DB
-     */
-    const Allowed_Data = [
-      "firstName",
-      "lastName",
-      "gender",
-      "age",
-      "email",
-      "password",
-    ];
+  //   // ADD API LEVEL DATA SANITIZATION AND VALIDADTION
+  //   /**
+  //    * when reqest comes from api, it has to be sanitized so that only the
+  //    * data i.e. required will go to DB
+  //    */
+  //   // const Allowed_Data = [
+  //   //   "firstName",
+  //   //   "lastName",
+  //   //   "gender",
+  //   //   "age",
+  //   //   "email",
+  //   //   "password",
+  //   // ];
 
-    const validData = Object.keys(data).every((k) => Allowed_Data.includes(k));
-    if (!validData) {
-      res.status(400).json({
-        message: "Data is not valid!",
-      });
-    } else {
-      next();
-    }
-  },
+  //   // const validData = Object.keys(data).every((k) => Allowed_Data.includes(k));
+
+  //   // OR
+
+  //   const validData = validateSignupData(req); // we can write helper functions to valide data
+
+  //   if (!validData) {
+  //     res.status(400).json({
+  //       message: "Data is not valid!",
+  //     });
+  //   } else {
+  //     next();
+  //   }
+  // },
   async (req, res) => {
-    const newUser = new User({
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      email: req.body.email,
-      password: req.body.password,
-      age: req.body.age,
-      gender: req.body.gender,
-    });
     try {
+      if (!(req.body.password.length >= 8 && req.body.password.length <= 50)) {
+        throw new Error("Length of password should be between 8-50 characters");
+      }
+      const encryptedPassword = await bcrypt.hash(req.body.password, 10);
+
+      const newUser = new User({
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        email: req.body.email,
+        password: encryptedPassword,
+      });
+
+      validateSignupData(newUser);
+
       await newUser.save();
       res.status(201).json(newUser);
     } catch (err) {
