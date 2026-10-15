@@ -1,4 +1,6 @@
 const express = require("express");
+const cookiePraser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 const { connectToDatabase } = require("./config/database.js");
 const { User } = require("./models/user.js");
 const { validateSignupData } = require("./utils/validation.js");
@@ -10,6 +12,10 @@ const app = express();
 
 /** work for all the routes. express.json() is a express middleware */
 app.use(express.json());
+/** to parse incoming cookies */
+app.use(cookiePraser());
+
+const SECRET = "SO_SECRET";
 
 /** APIs */
 
@@ -71,6 +77,50 @@ app.post(
   },
 );
 
+app.post("/login", async (req, res) => {
+  try {
+    if (!(req.body.password.length >= 8 && req.body.password.length <= 50)) {
+      throw new Error("Length of password should be between 8-50 characters");
+    }
+
+    const { email, password } = req.body;
+
+    // check if the user exists
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      /** do not expose whether the user exists or not
+       * throw invalid cred error
+       */
+      // throw new Error("User not exists!");
+      throw new Error("Invalid credentials!");
+    }
+
+    // if user is exists -> now validate password
+    const validPassword = await bcrypt.compare(password, user.password);
+
+    if (!validPassword) {
+      throw new Error("Invalid credentials!");
+    }
+
+    // if validaion succeeds, set token
+
+    const token = jwt.sign({ _id: user._id }, SECRET, {
+      expiresIn: 1000,
+    });
+
+    res.cookie("token", token);
+    res.send({
+      status: 200,
+      message: "User logged in successfully!",
+    });
+  } catch (err) {
+    res.send({
+      error: 400,
+      message: err.message,
+    });
+  }
+});
+
 /** USER */
 
 /** get a user */
@@ -115,6 +165,33 @@ app.get("/user/:id", async (req, res) => {
     res.status(200).json(user);
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+/** get user profile */
+
+app.get("/profile", async (req, res) => {
+  try {
+    const { token } = req.cookies;
+
+    if (!token) {
+      throw new Error("Invalid token!");
+    }
+
+    console.log("token is : ", token);
+
+    const { _id } = jwt.verify(token, SECRET);
+
+    const user = await User.findOne({ _id: _id });
+
+    if (!user) {
+      throw new Error("Invalid request!");
+    }
+
+    // write a cookie validation
+    res.status(200).send(user);
+  } catch (err) {
+    res.status(400).send(`ERROR : ${err.message}`);
   }
 });
 
