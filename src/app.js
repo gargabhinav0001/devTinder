@@ -53,8 +53,8 @@ app.post("/login", async (req, res) => {
 
     const { email, password } = req.body;
 
-    // check if the user exists
     const user = await User.findOne({ email: email });
+
     if (!user) {
       /** do not expose whether the user exists or not
        * throw invalid cred error
@@ -63,20 +63,22 @@ app.post("/login", async (req, res) => {
       throw new Error("Invalid credentials!");
     }
 
-    // if user is exists -> now validate password
-    const validPassword = await bcrypt.compare(password, user.password);
+    const validUser = await user.validatePassword(password);
 
-    if (!validPassword) {
+    if (!validUser) {
+      /** do not expose whether the user exists or not
+       * throw invalid cred error
+       */
+      // throw new Error("User not exists!");
       throw new Error("Invalid credentials!");
     }
 
+    // offloading JWT creation to schema mothods
+    const token = await user.getJWT();
+
     // if validaion succeeds, set token
-
-    const token = jwt.sign({ _id: user._id }, SECRET, {
-      expiresIn: 1000,
-    });
-
     res.cookie("token", token);
+
     res.send({
       status: 200,
       message: "User logged in successfully!",
