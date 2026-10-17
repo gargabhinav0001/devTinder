@@ -5,6 +5,7 @@ const { connectToDatabase } = require("./config/database.js");
 const { User } = require("./models/user.js");
 const { validateSignupData } = require("./utils/validation.js");
 const bcrypt = require("bcrypt");
+const { authenticate } = require("./middlewares/auth.js");
 
 const PORT = 3000;
 
@@ -19,64 +20,31 @@ const SECRET = "SO_SECRET";
 
 /** APIs */
 
-/** AUTH */
-app.post(
-  "/signup",
-  // (req, res, next) => {
-  //   const data = req.body;
-
-  //   // ADD API LEVEL DATA SANITIZATION AND VALIDADTION
-  //   /**
-  //    * when reqest comes from api, it has to be sanitized so that only the
-  //    * data i.e. required will go to DB
-  //    */
-  //   // const Allowed_Data = [
-  //   //   "firstName",
-  //   //   "lastName",
-  //   //   "gender",
-  //   //   "age",
-  //   //   "email",
-  //   //   "password",
-  //   // ];
-
-  //   // const validData = Object.keys(data).every((k) => Allowed_Data.includes(k));
-
-  //   // OR
-
-  //   const validData = validateSignupData(req); // we can write helper functions to valide data
-
-  //   if (!validData) {
-  //     res.status(400).json({
-  //       message: "Data is not valid!",
-  //     });
-  //   } else {
-  //     next();
-  //   }
-  // },
-  async (req, res) => {
-    try {
-      if (!(req.body.password.length >= 8 && req.body.password.length <= 50)) {
-        throw new Error("Length of password should be between 8-50 characters");
-      }
-      const encryptedPassword = await bcrypt.hash(req.body.password, 10);
-
-      const newUser = new User({
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        email: req.body.email,
-        password: encryptedPassword,
-      });
-
-      validateSignupData(newUser);
-
-      await newUser.save();
-      res.status(201).json(newUser);
-    } catch (err) {
-      res.status(400).json({ error: err.message });
+// SIGNUP
+app.post("/signup", async (req, res) => {
+  try {
+    if (!(req.body.password.length >= 8 && req.body.password.length <= 50)) {
+      throw new Error("Length of password should be between 8-50 characters");
     }
-  },
-);
+    const encryptedPassword = await bcrypt.hash(req.body.password, 10);
 
+    const newUser = new User({
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      email: req.body.email,
+      password: encryptedPassword,
+    });
+
+    validateSignupData(newUser);
+
+    await newUser.save();
+    res.status(201).json(newUser);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// LOGIN
 app.post("/login", async (req, res) => {
   try {
     if (!(req.body.password.length >= 8 && req.body.password.length <= 50)) {
@@ -121,154 +89,29 @@ app.post("/login", async (req, res) => {
   }
 });
 
-/** USER */
+// ******** AUTH MIDDLEWARE *********
 
-/** get a user */
-app.get("/user", async (req, res) => {
-  const { email } = req.body;
-
+app.use("/", async (req, res, next) => {
   try {
-    const updatedUser = await User.findOne({ email: email });
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    res.status(200).json(updatedUser);
+    await authenticate(req, req.cookies);
+    next();
   } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// get all users with a specific email
-app.get("/users", async (req, res) => {
-  const userEmail = req.body.email;
-  await User.find({ email: userEmail })
-    .then((user) => {
-      if (user.length === 0) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      res.status(200).json(user);
-    })
-    .catch((err) => {
-      res.status(400).json({ error: err.message });
+    res.send({
+      status: err.status || 400,
+      message: err.message,
     });
-});
-
-// get user by id
-
-app.get("/user/:id", async (req, res) => {
-  const userId = req.params.id;
-  try {
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    res.status(200).json(user);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
   }
 });
 
-/** get user profile */
+// **********************************
 
+/** PROFILE */
 app.get("/profile", async (req, res) => {
   try {
-    const { token } = req.cookies;
-
-    if (!token) {
-      throw new Error("Invalid token!");
-    }
-
-    console.log("token is : ", token);
-
-    const { _id } = jwt.verify(token, SECRET);
-
-    const user = await User.findOne({ _id: _id });
-
-    if (!user) {
-      throw new Error("Invalid request!");
-    }
-
-    // write a cookie validation
-    res.status(200).send(user);
+    /** getting attached user from auth middleware */
+    res.status(200).send(req.user);
   } catch (err) {
     res.status(400).send(`ERROR : ${err.message}`);
-  }
-});
-
-/** delete user */
-
-app.delete("/user/:id", async (req, res) => {
-  const userId = req.params.id;
-  try {
-    // const deletedUser = await User.findByIdAndDelete(userId);
-    const deletedUser = await User.findByIdAndDelete({ _id: userId });
-    if (!deletedUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    res.status(200).json({ message: "User deleted successfully" });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-/** patch user */
-
-app.patch("/user/:id", async (req, res) => {
-  const userId = req.params.id;
-  const updateData = req.body;
-
-  try {
-    // const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-    const updatedUser = await User.findByIdAndUpdate(
-      { _id: userId },
-      updateData,
-      {
-        returnDocument: "after",
-        runValidators: true,
-      },
-    );
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    res.status(200).json(updatedUser);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-/** Update user by email */
-app.patch("/user/email/:email", async (req, res) => {
-  const userEmail = req.params.email;
-  const updateData = req.body;
-
-  try {
-    const updatedUser = await User.findOneAndUpdate(
-      { email: userEmail }, // condition to find the user by email
-      updateData,
-      {
-        returnDocument: "after",
-      },
-    );
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    res.status(200).json(updatedUser);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-/** FEED */
-app.get("/feed", async (req, res) => {
-  /** get all users */
-  try {
-    const users = await User.find({});
-    if (users.length === 0) {
-      res.send({ message: "No users found", status: 404 });
-    }
-    res.send({ users, status: 200 });
-  } catch (err) {
-    res.send({ error: err.message, status: 400 });
   }
 });
 

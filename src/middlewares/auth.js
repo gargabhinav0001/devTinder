@@ -1,3 +1,36 @@
+const jwt = require("jsonwebtoken");
+const { User } = require("../models/user");
+const SECRET = "SO_SECRET";
+
+async function authenticate(req, cookies) {
+  try {
+    const { token } = cookies || {};
+
+    if (!token) {
+      throw new Error("Invalid Token !");
+    }
+
+    const decodedToken = jwt.verify(token, SECRET);
+
+    if (!decodedToken) {
+      throw new Error("Invalid Credentials!");
+    }
+
+    const { _id } = decodedToken;
+
+    // if user exists in our system
+    const user = await User.findById(_id);
+    if (!user) {
+      throw new Error("Invalid request!");
+    }
+
+    req.userId = _id;
+    req.user = user;
+  } catch (err) {
+    throw new Error(`ERROR : ${err}`);
+  }
+}
+
 function adminAuthenticate(req, res, next) {
   const token = "TOKEN";
   const isAdminAuthenticated = token === "TOKEN"; // Replace with your actual authentication logic
@@ -14,4 +47,4 @@ function userAuthenticate(req, res, next) {
   }
   next();
 }
-module.exports = { adminAuthenticate, userAuthenticate };
+module.exports = { adminAuthenticate, userAuthenticate, authenticate };
