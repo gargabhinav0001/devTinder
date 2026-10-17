@@ -2,9 +2,10 @@ const jwt = require("jsonwebtoken");
 const { User } = require("../models/user");
 const SECRET = "SO_SECRET";
 
-async function authenticate(req, cookies) {
+async function authenticate(req, _res, next) {
   try {
-    const { token } = cookies || {};
+    console.log("cookies : ", req.cookies);
+    const { token } = req?.cookies || {};
 
     if (!token) {
       throw new Error("Invalid Token !");
@@ -26,25 +27,10 @@ async function authenticate(req, cookies) {
 
     req.userId = _id;
     req.user = user;
+    next();
   } catch (err) {
     throw new Error(`ERROR : ${err}`);
   }
 }
 
-function adminAuthenticate(req, res, next) {
-  const token = "TOKEN";
-  const isAdminAuthenticated = token === "TOKEN"; // Replace with your actual authentication logic
-  if (!isAdminAuthenticated) {
-    return res.status(403).send("Access denied. Admin authentication failed.");
-  }
-  next();
-}
-function userAuthenticate(req, res, next) {
-  const token = "TOKEN";
-  const isUserAuthenticated = token === "TOKEN"; // Replace with your actual authentication logic
-  if (!isUserAuthenticated) {
-    return res.status(403).send("Access denied. Admin authentication failed.");
-  }
-  next();
-}
-module.exports = { adminAuthenticate, userAuthenticate, authenticate };
+module.exports = { authenticate };
