@@ -1,6 +1,7 @@
 const express = require("express");
 const { authenticate } = require("../middlewares/auth");
 const { ConnectionRequest } = require("../models/connection");
+const { User } = require("../models/user");
 
 const userRouter = express.Router();
 
@@ -50,6 +51,61 @@ userRouter.get("/connections", authenticate, async (req, res) => {
     res.send({
       status: 400,
       message: err.message || "Something went wrong!",
+    });
+  }
+});
+
+userRouter.get("/feed", authenticate, async (req, res) => {
+  try {
+    // users those had not send any type of request to me other than 'interested' and
+    // those users to whom I had not sent any type of request
+    const connections = await ConnectionRequest.find({
+      $or: [
+        { fromUserId: req.userId },
+        {
+          toUserId: req.userId,
+          /** if sender is interested in me, so SENDER should be visible in the feed
+           * THIS LOGIC WILL HELP -> IT'S A MATCH FEATURE */
+          status: {
+            $ne: "interested",
+          },
+        },
+      ],
+    }).select(["fromUserId", "toUserId"]);
+
+    const hideUsersFromFeed = new Set();
+
+    connections.forEach((connection) => {
+      hideUsersFromFeed.add(connection.toUserId);
+      hideUsersFromFeed.add(connection.fromUserId);
+    });
+
+    const usersToShowInFeed = await User.find({
+      $and: [
+        {
+          _id: {
+            // IMP : not in operator
+            $nin: [...hideUsersFromFeed],
+          },
+        },
+        // edge case : i have to neglect my id too
+        {
+          _id: {
+            $ne: req.userId,
+          },
+        },
+      ],
+    }).select(["firstName", "lastName", "about", "skills", "not"]);
+
+    res.send({
+      status: 200,
+      message: "Fetched feed successfully!",
+      data: usersToShowInFeed,
+    });
+  } catch (err) {
+    res.send({
+      status: 400,
+      messager: err.message || "Something went wrong!",
     });
   }
 });
