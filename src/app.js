@@ -5,6 +5,7 @@ const { connectToDatabase } = require("./config/database.js");
 const { authRouter } = require("./routes/auth.js");
 const { profileRouter } = require("./routes/profile.js");
 const { requestRouter } = require("./routes/request.js");
+const { userRouter } = require("./routes/user.js");
 
 const PORT = 3000;
 
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use(cookiePraser());
 
 app.use("/auth", authRouter);
+app.use("/user", userRouter);
 app.use("/profile", profileRouter);
 app.use("/connectionRequest", requestRouter);
 
