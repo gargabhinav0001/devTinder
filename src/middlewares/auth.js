@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const { User } = require("../models/user");
 const SECRET = "SO_SECRET";
 
-async function authenticate(req, _res, next) {
+async function authenticate(req, res, next) {
   try {
     console.log("cookies : ", req.cookies);
     const { token } = req?.cookies || {};
@@ -29,7 +29,7 @@ async function authenticate(req, _res, next) {
     req.user = user;
     next();
   } catch (err) {
-    throw new Error(`ERROR : ${err}`);
+    res.send(`ERROR : ${err}`);
   }
 }
 

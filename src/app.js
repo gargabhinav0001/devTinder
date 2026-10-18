@@ -21,7 +21,10 @@ app.use("/request", requestRouter);
 
 // fallback
 app.use("/", (_req, res) => {
-  res.send(404)("Not Found!");
+  res.send({
+    status: 404,
+    message: "Not Found!",
+  });
 });
 
 try {

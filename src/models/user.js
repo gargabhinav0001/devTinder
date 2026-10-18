@@ -43,11 +43,11 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, "Password is required"],
-      // validate(value) {
-      //   if (!checkValidator.isStrongPassword(value)) {
-      //     throw new Error("Password is not strong");
-      //   }
-      // },
+      validate(value) {
+        if (!checkValidator.isStrongPassword(value)) {
+          throw new Error("Password is not strong!");
+        }
+      },
     },
     age: { type: Number },
     gender: {
@@ -60,7 +60,16 @@ const userSchema = new mongoose.Schema(
     },
     photoUrl: { type: String },
     about: { type: String, default: "I am alive!" },
-    skills: { type: [String] },
+    skills: {
+      type: [String],
+      validate(value) {
+        if (value.length > 10) {
+          throw new Error(
+            "Number of skills exceeds, maximum 10 skills allowed!",
+          );
+        }
+      },
+    },
   },
   {
     timestamps: true,

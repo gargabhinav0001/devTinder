@@ -70,6 +70,8 @@ authRouter.post("/login", async (req, res) => {
       message: "User logged in successfully!",
     });
   } catch (err) {
+    /** clear exisitng cookie on invalid login */
+    res.clearCookie("token");
     res.send({
       error: 400,
       message: err.message,
@@ -79,11 +81,12 @@ authRouter.post("/login", async (req, res) => {
 
 authRouter.post("/logout", (req, res) => {
   try {
-    res.cookie("token", null, {
-      expires: new Date(),
+    // Clear the token cookie
+    res.clearCookie("token", {
+      path: "/", // Ensure this matches the path used when the cookie was created
     });
 
-    res.send();
+    res.send("User logout successfully!");
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
