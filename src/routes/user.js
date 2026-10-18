@@ -1,6 +1,5 @@
 const express = require("express");
 const { authenticate } = require("../middlewares/auth");
-const { User } = require("../models/user");
 const { ConnectionRequest } = require("../models/connection");
 
 const userRouter = express.Router();
@@ -35,10 +34,17 @@ userRouter.get("/connections", authenticate, async (req, res) => {
       .populate("fromUserId", ["firstName", "lastName"])
       .populate("toUserId", ["firstName", "lastName"]);
 
+    const data = connections.map((connection) => {
+      if (connection.fromUserId.toString() === req.userId.toString()) {
+        return connection.toUserId;
+      }
+      return connection.fromUserId;
+    });
+
     res.send({
       status: 200,
       message: "Fetched all connections succussfully!",
-      data: connections,
+      data: data,
     });
   } catch (err) {
     res.send({
