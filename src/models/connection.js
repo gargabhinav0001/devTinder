@@ -37,6 +37,7 @@ connectionRequestSchema.pre("save", function () {
     throw new Error("Can't send connection request to yourself!");
   }
 });
+
 /*********/
 
 const ConnectionRequest = mongoose.model(

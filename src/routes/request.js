@@ -74,6 +74,55 @@ requestRouter.post(
   },
 );
 
+requestRouter.patch(
+  "/review/:status/:requestId",
+  authenticate,
+  async (req, res) => {
+    try {
+      const { requestId, status } = req.params;
+      const allowedStatus = ["accepted", "rejected"];
+      const isAllowedStatus = allowedStatus.includes(status);
+
+      if (!isAllowedStatus) {
+        throw new Error("Invalid request!");
+      }
+
+      const connectionRequest = await ConnectionRequest.findOneAndUpdate(
+        {
+          _id: requestId,
+          /** Checking : only receiver should be the acceptor or rejector */
+          toUserId: req.userId,
+          status: "interested",
+        },
+        {
+          status,
+        },
+        {
+          returnDocument: "after",
+          runValidators: true,
+        },
+      );
+
+      if (!connectionRequest) {
+        throw new Error("Invalid Connection Request!");
+      }
+
+      console.log("status changed to : ", status);
+
+      res.send({
+        status: 200,
+        message: "Request is acknowledged!",
+        data: connectionRequest,
+      });
+    } catch (err) {
+      res.send({
+        status: 400,
+        message: err.message,
+      });
+    }
+  },
+);
+
 module.exports = {
   requestRouter,
 };

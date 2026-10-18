@@ -42,6 +42,10 @@ profileRouter.patch("/edit/password", authenticate, async (req, res) => {
     /** check the incoming req and sanitze the data  */
     const updatedPassword = req.body.password || "";
 
+    if (req.body.email !== req.user.email) {
+      throw new Error("Invalid request!");
+    }
+
     const validPattern = isStrongPassword(updatedPassword);
     if (!validPattern) {
       throw new Error("Password update failed. Need a strong password!");
