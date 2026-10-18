@@ -55,8 +55,18 @@ userRouter.get("/connections", authenticate, async (req, res) => {
   }
 });
 
+// feed ? page = 1 & limit = 10
 userRouter.get("/feed", authenticate, async (req, res) => {
   try {
+    const page = req.query.page || 1;
+    let limit = req.query.limit || 10;
+
+    // restricting max user per page
+    limit = limit > 50 ? 50 : limit;
+
+    /** No of document to skip */
+    const skip = (page - 1) * limit;
+
     // users those had not send any type of request to me other than 'interested' and
     // those users to whom I had not sent any type of request
     const connections = await ConnectionRequest.find({
@@ -95,7 +105,11 @@ userRouter.get("/feed", authenticate, async (req, res) => {
           },
         },
       ],
-    }).select(["firstName", "lastName", "about", "skills", "not"]);
+    })
+      .select(["firstName", "lastName", "about", "skills", "not"])
+      /** funcitons for PAGINATION */
+      .skip(skip)
+      .limit(limit);
 
     res.send({
       status: 200,
