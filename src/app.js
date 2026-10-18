@@ -17,7 +17,7 @@ app.use(cookiePraser());
 
 app.use("/auth", authRouter);
 app.use("/profile", profileRouter);
-app.use("/request", requestRouter);
+app.use("/connectionRequest", requestRouter);
 
 // fallback
 app.use("/", (_req, res) => {

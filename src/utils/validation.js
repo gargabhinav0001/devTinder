@@ -1,4 +1,5 @@
 const validator = require("validator");
+const { User } = require("../models/user");
 
 const validateSignupData = (user) => {
   const { email, password } = user;
@@ -28,4 +29,9 @@ const vlidateEditability = (user) => {
   return isEditAllowed;
 };
 
-module.exports = { validateSignupData, vlidateEditability };
+const isValidUser = async (id) => {
+  const isUserExists = await User.findOne({ _id: id });
+  return !!isUserExists;
+};
+
+module.exports = { validateSignupData, vlidateEditability, isValidUser };
