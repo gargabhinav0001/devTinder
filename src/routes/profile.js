@@ -10,7 +10,11 @@ const profileRouter = express.Router();
 profileRouter.get("/view", authenticate, async (req, res) => {
   try {
     /** getting attached user from auth middleware */
-    res.status(200).send(req.user);
+    res.send({
+      status: 200,
+      message: "Profile fetched successfullly!",
+      data: req.user,
+    });
   } catch (err) {
     res.status(400).send(`ERROR : ${err.message}`);
   }

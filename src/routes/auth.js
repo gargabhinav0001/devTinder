@@ -5,6 +5,13 @@ const { validateSignupData } = require("../utils/validation.js");
 
 const authRouter = express.Router();
 
+/** TODO: configure for production */
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: false, //process.env.NODE_ENV === "production",
+  sameSite: "lax", //process.env.NODE_ENV === "production" ? "none" : "lax",
+  path: "/",
+};
 authRouter.post("/signup", async (req, res) => {
   try {
     if (!(req.body.password.length >= 8 && req.body.password.length <= 50)) {
@@ -61,7 +68,7 @@ authRouter.post("/login", async (req, res) => {
     const token = await user.getJWT();
 
     // if validaion succeeds, set token
-    res.cookie("token", token);
+    res.cookie("token", token, COOKIE_OPTIONS);
 
     res.send({
       status: 200,
@@ -70,7 +77,7 @@ authRouter.post("/login", async (req, res) => {
     });
   } catch (err) {
     /** clear exisitng cookie on invalid login */
-    res.clearCookie("token");
+    res.clearCookie("token", COOKIE_OPTIONS);
     res.send({
       error: 400,
       message: err.message,
@@ -81,9 +88,7 @@ authRouter.post("/login", async (req, res) => {
 authRouter.post("/logout", (req, res) => {
   try {
     // Clear the token cookie
-    res.clearCookie("token", {
-      path: "/", // Ensure this matches the path used when the cookie was created
-    });
+    res.clearCookie("token", COOKIE_OPTIONS);
 
     res.send("User logout successfully!");
   } catch (err) {

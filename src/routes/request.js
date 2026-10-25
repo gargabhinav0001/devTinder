@@ -107,8 +107,6 @@ requestRouter.patch(
         throw new Error("Invalid Connection Request!");
       }
 
-      console.log("status changed to : ", status);
-
       res.send({
         status: 200,
         message: "Request is acknowledged!",

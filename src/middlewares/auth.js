@@ -4,7 +4,6 @@ const SECRET = "SO_SECRET";
 
 async function authenticate(req, res, next) {
   try {
-    console.log("cookies : ", req.cookies);
     const { token } = req?.cookies || {};
 
     if (!token) {
@@ -29,7 +28,10 @@ async function authenticate(req, res, next) {
     req.user = user;
     next();
   } catch (err) {
-    res.send(`ERROR : ${err}`);
+    res.send({
+      status: 401,
+      message: err.message,
+    });
   }
 }
 
