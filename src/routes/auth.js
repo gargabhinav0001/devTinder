@@ -5,8 +5,6 @@ const { validateSignupData } = require("../utils/validation.js");
 
 const authRouter = express.Router();
 
-console.log(" in authenticator route");
-
 authRouter.post("/signup", async (req, res) => {
   try {
     if (!(req.body.password.length >= 8 && req.body.password.length <= 50)) {
@@ -68,6 +66,7 @@ authRouter.post("/login", async (req, res) => {
     res.send({
       status: 200,
       message: "User logged in successfully!",
+      data: user,
     });
   } catch (err) {
     /** clear exisitng cookie on invalid login */

@@ -6,10 +6,19 @@ const { authRouter } = require("./routes/auth.js");
 const { profileRouter } = require("./routes/profile.js");
 const { requestRouter } = require("./routes/request.js");
 const { userRouter } = require("./routes/user.js");
+const cors = require("cors");
 
 const PORT = 3000;
 
 const app = express();
+
+app.use(
+  /** whitelisting domain */
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
 
 /** work for all the routes. express.json() is a express middleware */
 app.use(express.json());
